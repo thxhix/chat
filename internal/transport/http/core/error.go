@@ -1,11 +1,10 @@
-package http
+package core
 
 import (
 	"encoding/json"
 	"errors"
 	"github.com/thxhix/chat/internal/apperror"
 	"github.com/thxhix/chat/internal/logger"
-	"github.com/thxhix/chat/internal/transport/http/core"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -40,7 +39,7 @@ func WriteError(w http.ResponseWriter, log logger.ILogger, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	err = json.NewEncoder(w).Encode(core.ErrorResponse{
+	err = json.NewEncoder(w).Encode(ErrorResponse{
 		Code:      status,
 		ErrorText: appErr.Message,
 	})

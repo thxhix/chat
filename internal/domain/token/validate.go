@@ -19,10 +19,10 @@ func ValidateToken(now time.Time, userId int64, incomingHash string, rec *Refres
 		return ErrInvalidCredentials
 	}
 	if rec.ReplacedBy != nil {
-		return ErrInvalidCredentials
+		return ErrDeadToken
 	}
 	if now.After(rec.ExpiresAt) {
-		return ErrInvalidCredentials
+		return ErrDeadToken
 	}
 	if subtle.ConstantTimeCompare([]byte(rec.TokenHash), []byte(incomingHash)) != 1 {
 		return ErrInvalidCredentials

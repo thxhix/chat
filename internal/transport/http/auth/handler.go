@@ -5,7 +5,7 @@ import (
 	"github.com/thxhix/chat/internal/domain/auth"
 	"github.com/thxhix/chat/internal/domain/token"
 	"github.com/thxhix/chat/internal/logger"
-	httpTransport "github.com/thxhix/chat/internal/transport/http"
+	"github.com/thxhix/chat/internal/transport/http/core"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
@@ -28,20 +28,20 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		httpTransport.WriteError(w, h.logger, err)
+		core.WriteError(w, h.logger, err)
 		return
 	}
 
 	reqObj := RegisterRequest{}
 	err = easyjson.Unmarshal(body, &reqObj)
 	if err != nil {
-		httpTransport.WriteError(w, h.logger, err)
+		core.WriteError(w, h.logger, err)
 		return
 	}
 
 	userId, accessToken, refreshToken, err := h.authService.Register(r.Context(), reqObj.Login, reqObj.Password)
 	if err != nil {
-		httpTransport.WriteError(w, h.logger, err)
+		core.WriteError(w, h.logger, err)
 		return
 	}
 
@@ -56,7 +56,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	if _, err := easyjson.MarshalToWriter(&respObj, w); err != nil {
-		h.logger.Error(httpTransport.ErrCantWriteResponseBody.Error(), zap.Error(err))
+		h.logger.Error(core.ErrCantWriteResponseBody.Error(), zap.Error(err))
 		return
 	}
 }
@@ -66,21 +66,21 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		httpTransport.WriteError(w, h.logger, err)
+		core.WriteError(w, h.logger, err)
 		return
 	}
 
 	reqObj := LoginRequest{}
 	err = easyjson.Unmarshal(body, &reqObj)
 	if err != nil {
-		httpTransport.WriteError(w, h.logger, err)
+		core.WriteError(w, h.logger, err)
 		return
 	}
 
 	userId, accessToken, refreshToken, err := h.authService.Login(r.Context(), reqObj.Login, reqObj.Password)
 
 	if err != nil {
-		httpTransport.WriteError(w, h.logger, err)
+		core.WriteError(w, h.logger, err)
 		return
 	}
 
@@ -95,7 +95,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if _, err := easyjson.MarshalToWriter(&respObj, w); err != nil {
-		h.logger.Error(httpTransport.ErrCantWriteResponseBody.Error(), zap.Error(err))
+		h.logger.Error(core.ErrCantWriteResponseBody.Error(), zap.Error(err))
 		return
 	}
 }
@@ -105,25 +105,25 @@ func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		httpTransport.WriteError(w, h.logger, err)
+		core.WriteError(w, h.logger, err)
 		return
 	}
 
 	reqObj := RefreshRequest{}
 	err = easyjson.Unmarshal(body, &reqObj)
 	if err != nil {
-		httpTransport.WriteError(w, h.logger, err)
+		core.WriteError(w, h.logger, err)
 		return
 	}
 
 	if err := token.ValidateRefreshToken(reqObj.RefreshToken); err != nil {
-		httpTransport.WriteError(w, h.logger, err)
+		core.WriteError(w, h.logger, err)
 		return
 	}
 
 	userId, accessToken, refreshToken, err := h.authService.Refresh(r.Context(), reqObj.RefreshToken)
 	if err != nil {
-		httpTransport.WriteError(w, h.logger, err)
+		core.WriteError(w, h.logger, err)
 		return
 	}
 
@@ -138,7 +138,7 @@ func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if _, err := easyjson.MarshalToWriter(&respObj, w); err != nil {
-		h.logger.Error(httpTransport.ErrCantWriteResponseBody.Error(), zap.Error(err))
+		h.logger.Error(core.ErrCantWriteResponseBody.Error(), zap.Error(err))
 		return
 	}
 }

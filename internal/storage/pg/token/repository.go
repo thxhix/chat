@@ -44,7 +44,7 @@ func (r *TokensRepository) Rotate(ctx context.Context, userID int64, oldJTI uuid
 	}
 	aff, _ := res.RowsAffected()
 	if aff != 1 {
-		return token.ErrTokenAlreadyRotatedOrExpired
+		return token.ErrDeadToken
 	}
 
 	if _, err := tx.ExecContext(ctx, queryInsert, userID, newJTI, newHash, newIssuedAt, newExpiresAt); err != nil {
@@ -68,7 +68,7 @@ func (r *TokensRepository) GetByJTI(ctx context.Context, jti uuid.UUID) (*token.
 		&rt.ReplacedBy,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, token.ErrTokenDoesntExistsByJTI
+			return nil, token.ErrDeadToken
 		}
 		return nil, err
 	}

@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	ErrInvalidCredentials           = apperror.NewValidationError("invalid credentials")
-	ErrTokenAlreadyRotatedOrExpired = apperror.NewUnauthorizedError(`expired or invalid token`)
-	ErrTokenDoesntExistsByJTI       = apperror.NewUnauthorizedError(`expired or invalid token`)
+	ErrInvalidCredentials = apperror.NewValidationError("invalid credentials")
+	ErrDeadToken          = apperror.NewUnauthorizedError(`expired or invalid token`)
+	ErrMissingToken       = apperror.NewUnauthorizedError(`missing bearer token`)
 )
