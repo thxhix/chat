@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS users_chat_state;
