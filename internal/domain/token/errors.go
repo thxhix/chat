@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	ErrInvalidCredentials = apperror.NewValidationError("invalid credentials")
+	ErrInvalidCredentials = apperror.NewBadRequestError("invalid credentials")
 	ErrDeadToken          = apperror.NewUnauthorizedError(`expired or invalid token`)
 	ErrMissingToken       = apperror.NewUnauthorizedError(`missing bearer token`)
 )

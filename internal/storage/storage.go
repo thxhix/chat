@@ -3,10 +3,16 @@ package storage
 import (
 	"context"
 	"github.com/thxhix/chat/internal/config"
+	"github.com/thxhix/chat/internal/domain/chat"
+	"github.com/thxhix/chat/internal/domain/chat_member"
+	"github.com/thxhix/chat/internal/domain/message"
 	"github.com/thxhix/chat/internal/domain/token"
 	"github.com/thxhix/chat/internal/domain/user"
 	"github.com/thxhix/chat/internal/logger"
 	"github.com/thxhix/chat/internal/storage/pg"
+	chatpg "github.com/thxhix/chat/internal/storage/pg/chat"
+	chatmpg "github.com/thxhix/chat/internal/storage/pg/chat_member"
+	messagepg "github.com/thxhix/chat/internal/storage/pg/message"
 	tokenpg "github.com/thxhix/chat/internal/storage/pg/token"
 	userpg "github.com/thxhix/chat/internal/storage/pg/user"
 
@@ -15,8 +21,11 @@ import (
 
 // Storage groups repository instances used by the application.
 type Storage struct {
-	User  user.IUserRepository
-	Token token.ITokenRepository
+	User       user.IUserRepository
+	Token      token.ITokenRepository
+	Message    message.IMessageRepository
+	Chat       chat.IChatRepository
+	ChatMember chat_member.IChatMemberRepository
 }
 
 // NewStorage creates repository instances, runs migrations and returns a cleanup
@@ -56,8 +65,15 @@ func NewStorage(ctx context.Context, cfg *config.Config, logger logger.ILogger) 
 	userRepository := userpg.NewRepository(db.Driver)
 	tokenRepository := tokenpg.NewRepository(db.Driver)
 
+	messageRepository := messagepg.NewRepository(db.Driver)
+	chatRepository := chatpg.NewRepository(db.Driver)
+	chatMemberRepository := chatmpg.NewRepository(db.Driver)
+
 	return &Storage{
-		User:  userRepository,
-		Token: tokenRepository,
+		User:       userRepository,
+		Token:      tokenRepository,
+		Message:    messageRepository,
+		Chat:       chatRepository,
+		ChatMember: chatMemberRepository,
 	}, closeFn, nil
 }

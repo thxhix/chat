@@ -10,7 +10,7 @@ func HTTPStatus(err error) int {
 
 	if errors.As(err, &appErr) {
 		switch appErr.Code {
-		case CodeValidation:
+		case CodeBadRequest:
 			return http.StatusBadRequest
 		case CodeConflict:
 			return http.StatusConflict
@@ -18,6 +18,8 @@ func HTTPStatus(err error) int {
 			return http.StatusUnauthorized
 		case CodeNotFound:
 			return http.StatusNotFound
+		case CodeForbidden:
+			return http.StatusForbidden
 		default:
 			return http.StatusInternalServerError
 		}

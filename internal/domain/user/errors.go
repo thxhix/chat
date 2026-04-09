@@ -5,10 +5,10 @@ import (
 )
 
 var (
-	ErrLoginTooShort    = apperror.NewValidationError("login is too short, minimum length – 3")
-	ErrLoginTooLong     = apperror.NewValidationError("login is too long, maximum length – 64")
-	ErrPasswordTooShort = apperror.NewValidationError("password too short, minimum length – 8")
-	ErrPasswordTooLong  = apperror.NewValidationError("password too long, maximum length – 50")
+	ErrLoginTooShort    = apperror.NewBadRequestError("login is too short, minimum length – 3")
+	ErrLoginTooLong     = apperror.NewBadRequestError("login is too long, maximum length – 64")
+	ErrPasswordTooShort = apperror.NewBadRequestError("password too short, minimum length – 8")
+	ErrPasswordTooLong  = apperror.NewBadRequestError("password too long, maximum length – 50")
 )
 
 var (

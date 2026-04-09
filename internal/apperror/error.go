@@ -3,10 +3,11 @@ package apperror
 type Code string
 
 const (
-	CodeValidation   Code = "VALIDATION_ERROR"
+	CodeBadRequest   Code = "BAD_REQUEST"
 	CodeConflict     Code = "CONFLICT"
 	CodeNotFound     Code = "NOT_FOUND"
 	CodeUnauthorized Code = "UNAUTHORIZED"
+	CodeForbidden    Code = "FORBIDDEN"
 	CodeInternal     Code = "INTERNAL"
 )
 
@@ -24,9 +25,9 @@ func (e *Error) Unwrap() error {
 	return e.Err
 }
 
-func NewValidationError(msg string) error {
+func NewBadRequestError(msg string) error {
 	return &Error{
-		Code:    CodeValidation,
+		Code:    CodeBadRequest,
 		Message: msg,
 	}
 }
@@ -48,6 +49,13 @@ func NewConflictError(msg string) error {
 func NewNotFoundError(msg string) error {
 	return &Error{
 		Code:    CodeNotFound,
+		Message: msg,
+	}
+}
+
+func NewForbiddenError(msg string) error {
+	return &Error{
+		Code:    CodeForbidden,
 		Message: msg,
 	}
 }
