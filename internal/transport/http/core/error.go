@@ -14,27 +14,13 @@ var (
 )
 
 func WriteError(w http.ResponseWriter, log logger.ILogger, err error) {
-	var appErr *apperror.Error
-
-	if !errors.As(err, &appErr) {
-		appErr = &apperror.Error{
-			Code:    apperror.CodeInternal,
-			Message: "internal error",
-			Err:     err,
-		}
+	appErr := apperror.ErrorMapper(err)
+	if appErr == nil {
+		return
 	}
-
 	status := apperror.HTTPStatus(appErr)
 
-	if status >= 500 {
-		if appErr.Err != nil {
-			log.Error("request failed", zap.Error(appErr.Err))
-		} else {
-			log.Error("request failed", zap.String("error", appErr.Message))
-		}
-	} else {
-		log.Warn("request failed", zap.String("message", appErr.Message), zap.Int("status", status))
-	}
+	writeLogger(log, status, appErr)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -45,5 +31,17 @@ func WriteError(w http.ResponseWriter, log logger.ILogger, err error) {
 	})
 	if err != nil {
 		log.Error("failed to write response", zap.Error(err))
+	}
+}
+
+func writeLogger(logger logger.ILogger, statusCode int, appErr *apperror.Error) {
+	if statusCode >= 500 {
+		if appErr.Err != nil {
+			logger.Error("INTERNAL Error", zap.Int("status", statusCode), zap.Error(appErr.Err))
+		} else {
+			logger.Error("INTERNAL Error", zap.Int("status", statusCode), zap.String("message", appErr.Message))
+		}
+	} else {
+		logger.Warn("Request Error", zap.Int("status", statusCode), zap.String("message", appErr.Message))
 	}
 }

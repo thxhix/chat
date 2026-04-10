@@ -8,6 +8,7 @@ const (
 	CodeNotFound     Code = "NOT_FOUND"
 	CodeUnauthorized Code = "UNAUTHORIZED"
 	CodeForbidden    Code = "FORBIDDEN"
+	CodeTimeout      Code = "Timeout"
 	CodeInternal     Code = "INTERNAL"
 )
 
@@ -25,37 +26,52 @@ func (e *Error) Unwrap() error {
 	return e.Err
 }
 
-func NewBadRequestError(msg string) error {
+func NewInternalError(err error) *Error {
+	return &Error{
+		Code:    CodeInternal,
+		Message: "Internal Server Error",
+		Err:     err,
+	}
+}
+
+func NewBadRequestError(msg string) *Error {
 	return &Error{
 		Code:    CodeBadRequest,
 		Message: msg,
 	}
 }
 
-func NewUnauthorizedError(msg string) error {
+func NewUnauthorizedError(msg string) *Error {
 	return &Error{
 		Code:    CodeUnauthorized,
 		Message: msg,
 	}
 }
 
-func NewConflictError(msg string) error {
+func NewConflictError(msg string) *Error {
 	return &Error{
 		Code:    CodeConflict,
 		Message: msg,
 	}
 }
 
-func NewNotFoundError(msg string) error {
+func NewNotFoundError(msg string) *Error {
 	return &Error{
 		Code:    CodeNotFound,
 		Message: msg,
 	}
 }
 
-func NewForbiddenError(msg string) error {
+func NewForbiddenError(msg string) *Error {
 	return &Error{
 		Code:    CodeForbidden,
+		Message: msg,
+	}
+}
+
+func NewTimeoutError(msg string) *Error {
+	return &Error{
+		Code:    CodeTimeout,
 		Message: msg,
 	}
 }
