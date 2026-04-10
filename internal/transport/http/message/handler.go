@@ -7,7 +7,6 @@ import (
 	"github.com/thxhix/chat/internal/apperror"
 	"github.com/thxhix/chat/internal/domain/message"
 	"github.com/thxhix/chat/internal/logger"
-	"github.com/thxhix/chat/internal/security/jwt"
 	"github.com/thxhix/chat/internal/transport/http/core"
 	"github.com/thxhix/chat/internal/transport/http/core/cursor"
 	"github.com/thxhix/chat/internal/transport/http/core/limit"
@@ -19,15 +18,12 @@ import (
 
 type Handler struct {
 	logger     logger.ILogger
-	jwtManager jwt.IJWTManager
-
 	msgService message.IMessageService
 }
 
-func NewHandler(l logger.ILogger, jm jwt.IJWTManager, ms message.IMessageService) *Handler {
+func NewHandler(l logger.ILogger, ms message.IMessageService) *Handler {
 	return &Handler{
 		logger:     l,
-		jwtManager: jm,
 		msgService: ms,
 	}
 }
@@ -38,7 +34,7 @@ type RequestMeta struct {
 }
 
 func getRequestMeta(r *http.Request) (*RequestMeta, error) {
-	chatIDStr := chi.URLParam(r, CHAT_ID_KEY)
+	chatIDStr := chi.URLParam(r, core.ChatIdPrefix)
 	chatID, err := uuid.Parse(chatIDStr)
 	if err != nil {
 		return nil, apperror.NewBadRequestError("Wrong ChatID format provided")

@@ -4,12 +4,12 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/thxhix/chat/internal/domain/chat"
+	"github.com/thxhix/chat/internal/transport/http/core"
 	"github.com/thxhix/chat/internal/transport/http/core/cursor"
-	"github.com/thxhix/chat/internal/transport/http/core/result"
 )
 
 type IMessageService interface {
-	GetChatMessages(ctx context.Context, chatId uuid.UUID, userId int64, limit int, c *cursor.Cursor) (*result.Paged[MessageModel], error)
+	GetChatMessages(ctx context.Context, chatId uuid.UUID, userId int64, limit int, c *cursor.Cursor) (*core.Paged[MessageModel], error)
 	SendMessage(ctx context.Context, chatId uuid.UUID, userId int64, text string) (string, error)
 }
 
@@ -26,7 +26,7 @@ func NewMessageService(cs chat.IChatService, mr IMessageRepository) *MessageServ
 	}
 }
 
-func (s *MessageService) GetChatMessages(ctx context.Context, chatId uuid.UUID, userId int64, limit int, c *cursor.Cursor) (*result.Paged[MessageModel], error) {
+func (s *MessageService) GetChatMessages(ctx context.Context, chatId uuid.UUID, userId int64, limit int, c *cursor.Cursor) (*core.Paged[MessageModel], error) {
 	internalChatId, err := s.chatService.GetInternalID(ctx, chatId)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (s *MessageService) GetChatMessages(ctx context.Context, chatId uuid.UUID, 
 		return nil, err
 	}
 
-	res := &result.Paged[MessageModel]{
+	res := &core.Paged[MessageModel]{
 		Items: messages,
 	}
 

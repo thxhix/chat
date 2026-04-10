@@ -11,7 +11,10 @@ import (
 	"github.com/thxhix/chat/internal/storage"
 	"github.com/thxhix/chat/internal/transport/http"
 	authhttp "github.com/thxhix/chat/internal/transport/http/auth"
-	chathttp "github.com/thxhix/chat/internal/transport/http/message"
+	chathttp "github.com/thxhix/chat/internal/transport/http/chat"
+	"github.com/thxhix/chat/internal/transport/http/core/handlers"
+	"github.com/thxhix/chat/internal/transport/http/core/router"
+	msghttp "github.com/thxhix/chat/internal/transport/http/message"
 	"go.uber.org/zap"
 )
 
@@ -33,10 +36,13 @@ func RunServer(logger logger.ILogger, cfg *config.Config) error {
 	ms := messagedomain.NewMessageService(cs, store.Message)
 
 	// Handlers
-	ah := authhttp.NewHandler(logger, as)
-	ch := chathttp.NewHandler(logger, sec.JWT, ms)
+	h := &handlers.Handlers{
+		Auth:    authhttp.NewHandler(logger, as),
+		Message: msghttp.NewHandler(logger, ms),
+		Chat:    chathttp.NewHandler(logger, ms),
+	}
 
-	r := http.NewRouter(ah, ch)
+	r := router.NewRouter(logger, sec.JWT, h)
 
 	s := http.NewServer(r, cfg, logger)
 	err = s.Start(ctx)

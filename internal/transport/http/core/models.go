@@ -1,4 +1,4 @@
-package result
+package core
 
 type Paged[T any] struct {
 	Items    []T
