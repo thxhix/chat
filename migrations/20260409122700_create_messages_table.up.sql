@@ -11,3 +11,4 @@ CREATE TABLE messages (
 
 CREATE INDEX idx_messages_chat_created_at ON messages(chat_id, created_at DESC);
 CREATE INDEX idx_messages_not_deleted ON messages(chat_id, created_at DESC, id DESC) WHERE deleted_at IS NULL;
+CREATE INDEX idx_messages_chat_cursor ON messages (chat_id, created_at DESC, id DESC);

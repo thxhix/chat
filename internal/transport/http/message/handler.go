@@ -1,4 +1,4 @@
-package chat
+package message
 
 import (
 	"github.com/go-chi/chi/v5"
@@ -9,6 +9,8 @@ import (
 	"github.com/thxhix/chat/internal/logger"
 	"github.com/thxhix/chat/internal/security/jwt"
 	"github.com/thxhix/chat/internal/transport/http/core"
+	"github.com/thxhix/chat/internal/transport/http/core/cursor"
+	"github.com/thxhix/chat/internal/transport/http/core/limit"
 	"github.com/thxhix/chat/internal/transport/http/middleware"
 	"go.uber.org/zap"
 	"io"
@@ -53,7 +55,56 @@ func getRequestMeta(r *http.Request) (*RequestMeta, error) {
 }
 
 func (h *Handler) GetMessages(w http.ResponseWriter, r *http.Request) {
-	// TODO...
+	rm, err := getRequestMeta(r)
+	if err != nil {
+		core.WriteError(w, h.logger, err)
+		return
+	}
+
+	req := GetMessagesRequest{
+		Cursor: cursor.GetFromRequest(r),
+		Limit:  limit.GetFromRequest(r),
+	}
+
+	reqCursor, err := cursor.DecodeCursor(req.Cursor)
+	if err != nil {
+		core.WriteError(w, h.logger, err)
+		return
+	}
+
+	result, err := h.msgService.GetChatMessages(r.Context(), rm.ChatID, rm.UserID, req.Limit, reqCursor)
+	if err != nil {
+		core.WriteError(w, h.logger, err)
+		return
+	}
+
+	var nextCursor *string
+	if result.HasMore && result.LastItem != nil {
+		c := cursor.Cursor{
+			ID:        result.LastItem.ID,
+			CreatedAt: result.LastItem.CreatedAt,
+		}
+		encoded, _ := c.EncodeCursor()
+		nextCursor = &encoded
+	}
+
+	mList := make([]GetMessagesRecord, 0, len(result.Items))
+	for _, m := range result.Items {
+		mList = append(mList, ToMessageResponse(m))
+	}
+
+	res := GetMessagesResponse{
+		Messages:   mList,
+		NextCursor: nextCursor,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if _, err := easyjson.MarshalToWriter(&res, w); err != nil {
+		h.logger.Error(core.ErrCantWriteResponseBody.Error(), zap.Error(err))
+		return
+	}
 }
 
 func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {

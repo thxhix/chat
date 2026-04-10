@@ -11,7 +11,7 @@ import (
 	"github.com/thxhix/chat/internal/storage"
 	"github.com/thxhix/chat/internal/transport/http"
 	authhttp "github.com/thxhix/chat/internal/transport/http/auth"
-	chathttp "github.com/thxhix/chat/internal/transport/http/chat"
+	chathttp "github.com/thxhix/chat/internal/transport/http/message"
 	"go.uber.org/zap"
 )
 

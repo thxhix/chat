@@ -1,4 +1,4 @@
-package chat
+package message
 
 import (
 	"github.com/go-chi/chi/v5"
