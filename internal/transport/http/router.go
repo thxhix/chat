@@ -13,6 +13,7 @@ func NewRouter(handlers ...RouteRegistrar) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.GzipMiddleware)
+	router.Use(middleware.TimeoutMiddleware)
 
 	router.Route("/api", func(api chi.Router) {
 		for _, h := range handlers {

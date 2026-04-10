@@ -2,7 +2,6 @@ package message
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/thxhix/chat/internal/domain/chat"
 	"github.com/thxhix/chat/internal/transport/http/core/cursor"
@@ -47,7 +46,6 @@ func (s *MessageService) GetChatMessages(ctx context.Context, chatId uuid.UUID, 
 		Items: messages,
 	}
 
-	fmt.Println(len(messages), limit)
 	if len(messages) > limit {
 
 		res.HasMore = true
