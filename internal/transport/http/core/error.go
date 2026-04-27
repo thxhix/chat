@@ -34,14 +34,34 @@ func WriteError(w http.ResponseWriter, log logger.ILogger, err error) {
 	}
 }
 
-func writeLogger(logger logger.ILogger, statusCode int, appErr *apperror.Error) {
+func WritePanic(w http.ResponseWriter, log logger.ILogger, err error) {
+	appErr := apperror.ErrorMapper(err)
+	if appErr == nil {
+		return
+	}
+
+	status := http.StatusInternalServerError
+
+	w.Header().Set("Content-Type", "application/json")
+	log.Error("PANIC", zap.Error(err))
+
+	err = json.NewEncoder(w).Encode(ErrorResponse{
+		Code:      status,
+		ErrorText: appErr.Message,
+	})
+	if err != nil {
+		log.Error("failed to write response", zap.Error(err))
+	}
+}
+
+func writeLogger(log logger.ILogger, statusCode int, appErr *apperror.Error) {
 	if statusCode >= 500 {
 		if appErr.Err != nil {
-			logger.Error("INTERNAL Error", zap.Int("status", statusCode), zap.Error(appErr.Err))
+			log.Error("INTERNAL Error", zap.Int("status", statusCode), zap.Error(appErr.Err))
 		} else {
-			logger.Error("INTERNAL Error", zap.Int("status", statusCode), zap.String("message", appErr.Message))
+			log.Error("INTERNAL Error", zap.Int("status", statusCode), zap.String("message", appErr.Message))
 		}
 	} else {
-		logger.Warn("Request Error", zap.Int("status", statusCode), zap.String("message", appErr.Message))
+		log.Warn("Request Error", zap.Int("status", statusCode), zap.String("message", appErr.Message))
 	}
 }

@@ -12,6 +12,7 @@ import (
 func NewRouter(logger logger.ILogger, jwtManager jwt.IJWTManager, h *handlers.Handlers) *chi.Mux {
 	router := chi.NewRouter()
 
+	router.Use(middleware.NewRecoverer(logger))
 	router.Use(middleware.GzipMiddleware)
 	router.Use(middleware.TimeoutMiddleware)
 

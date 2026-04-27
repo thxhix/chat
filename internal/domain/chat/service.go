@@ -6,9 +6,13 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/thxhix/chat/internal/domain/chat_member"
+	uuidManager "github.com/thxhix/chat/internal/security/uuid"
+	"github.com/thxhix/chat/internal/storage/pg/core/tx_manager"
 )
 
 type IChatService interface {
+	CreateChat(ctx context.Context, cType int8, members []int64) (*CreateChatResult, bool, error)
+
 	GetInternalID(ctx context.Context, chatUUID uuid.UUID) (int64, error)
 	EnsureUserInChat(ctx context.Context, chatId int64, userId int64) error
 }
@@ -16,13 +20,18 @@ type IChatService interface {
 type ChatService struct {
 	chatRepo       IChatRepository
 	chatMemberRepo chat_member.IChatMemberRepository
+	txManager      tx_manager.ITXManager
+	uuidManager    uuidManager.IUUIDManager
 }
 
 // NewService constructs a new AuthService with given dependencies.
-func NewService(cr IChatRepository, cmr chat_member.IChatMemberRepository) IChatService {
+func NewService(cr IChatRepository, cmr chat_member.IChatMemberRepository, tx tx_manager.ITXManager, uuid uuidManager.IUUIDManager) IChatService {
 	return &ChatService{
 		chatRepo:       cr,
 		chatMemberRepo: cmr,
+
+		txManager:   tx,
+		uuidManager: uuid,
 	}
 }
 
@@ -48,4 +57,39 @@ func (s *ChatService) EnsureUserInChat(ctx context.Context, chatId int64, userId
 	}
 
 	return nil
+}
+
+func (s *ChatService) CreateChat(ctx context.Context, cType int8, members []int64) (*CreateChatResult, bool, error) {
+	var err error
+
+	var chat *CreateChatResult
+	var idempotencyKey uuid.UUID
+	var isCreated bool
+
+	if cType == 1 {
+		idempotencyKey = s.uuidManager.NewUUIDv5(GenerateIdempotencyStr(cType, members))
+	} else {
+		idempotencyKey, err = s.uuidManager.NewUUIDv7()
+		if err != nil {
+			return chat, false, err
+		}
+	}
+
+	err = s.txManager.WithinTransaction(ctx, func(txCtx context.Context) error {
+		chat, isCreated, err = s.chatRepo.CreateChat(txCtx, idempotencyKey, cType)
+		if err != nil {
+			return err
+		}
+
+		err = s.chatMemberRepo.LinkBatch(txCtx, chat.ID, members)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return chat, false, err
+	}
+
+	return chat, isCreated, nil
 }

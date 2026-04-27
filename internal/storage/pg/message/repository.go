@@ -2,19 +2,21 @@ package message
 
 import (
 	"context"
-	"database/sql"
+	"github.com/google/uuid"
 	"github.com/thxhix/chat/internal/domain/chat"
 	"github.com/thxhix/chat/internal/domain/message"
-	"github.com/thxhix/chat/internal/security/uuid"
+	"github.com/thxhix/chat/internal/storage/pg/core"
 	"github.com/thxhix/chat/internal/transport/http/core/cursor"
 )
 
 type MessageRepository struct {
-	db *sql.DB
+	*core.BaseRepository
 }
 
-func NewRepository(db *sql.DB) *MessageRepository {
-	return &MessageRepository{db: db}
+func NewRepository(base *core.BaseRepository) *MessageRepository {
+	return &MessageRepository{
+		BaseRepository: base,
+	}
 }
 
 func (r *MessageRepository) GetByChatID(ctx context.Context, chatId int64, limit int, c *cursor.Cursor) ([]message.MessageModel, error) {
@@ -25,7 +27,7 @@ func (r *MessageRepository) GetByChatID(ctx context.Context, chatId int64, limit
 }
 
 func (r *MessageRepository) getByChatIDFirstPage(ctx context.Context, chatId int64, limit int) ([]message.MessageModel, error) {
-	rows, err := r.db.QueryContext(ctx, queryGetByChatMessagesFirstPage, chatId, limit)
+	rows, err := r.BaseRepository.DB.QueryContext(ctx, queryGetByChatMessagesFirstPage, chatId, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +62,7 @@ func (r *MessageRepository) getByChatIDFirstPage(ctx context.Context, chatId int
 }
 
 func (r *MessageRepository) getByChatIDCursor(ctx context.Context, chatId int64, limit int, c *cursor.Cursor) ([]message.MessageModel, error) {
-	rows, err := r.db.QueryContext(ctx, queryGetByChatMessagesWithCursor, chatId, c.CreatedAt, c.ID, limit)
+	rows, err := r.BaseRepository.DB.QueryContext(ctx, queryGetByChatMessagesWithCursor, chatId, c.CreatedAt, c.ID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -94,13 +96,8 @@ func (r *MessageRepository) getByChatIDCursor(ctx context.Context, chatId int64,
 	return messages, nil
 }
 
-func (r *MessageRepository) AddMessage(ctx context.Context, chatId int64, userId int64, text string) (string, error) {
-	messageId, err := uuid.NewUUID()
-	if err != nil {
-		return "", err
-	}
-
-	result, err := r.db.ExecContext(ctx, addMessageQuery, messageId, chatId, userId, text)
+func (r *MessageRepository) AddMessage(ctx context.Context, messageId uuid.UUID, chatId int64, userId int64, text string) (string, error) {
+	result, err := r.BaseRepository.DB.ExecContext(ctx, addMessageQuery, messageId, chatId, userId, text)
 	if err != nil {
 		return "", err
 	}

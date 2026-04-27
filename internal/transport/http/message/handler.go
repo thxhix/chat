@@ -104,13 +104,13 @@ func (h *Handler) GetMessages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
+	defer func() { _ = r.Body.Close() }()
+
 	rm, err := getRequestMeta(r)
 	if err != nil {
 		core.WriteError(w, h.logger, err)
 		return
 	}
-
-	defer func() { _ = r.Body.Close() }()
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {

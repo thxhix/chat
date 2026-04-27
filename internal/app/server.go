@@ -8,6 +8,7 @@ import (
 	messagedomain "github.com/thxhix/chat/internal/domain/message"
 	"github.com/thxhix/chat/internal/logger"
 	"github.com/thxhix/chat/internal/security"
+	"github.com/thxhix/chat/internal/security/uuid"
 	"github.com/thxhix/chat/internal/storage"
 	"github.com/thxhix/chat/internal/transport/http"
 	authhttp "github.com/thxhix/chat/internal/transport/http/auth"
@@ -21,25 +22,26 @@ import (
 func RunServer(logger logger.ILogger, cfg *config.Config) error {
 	ctx := context.Background()
 
-	store, closeFn, err := storage.NewStorage(ctx, cfg, logger)
+	sec := security.NewSecurity(cfg)
+	uuidManager := uuid.NewUUIDManager(cfg.UUIDSalt)
+
+	store, driver, txManager, err := storage.NewStorage(ctx, cfg, logger)
 	if err != nil {
 		logger.Error("Failed to create repo storage", zap.Error(err))
 		return err
 	}
-	defer closeFn()
-
-	sec := security.NewSecurity(cfg)
+	defer func() { _ = driver.Close() }()
 
 	// Services
 	as := authdomain.NewService(store.User, store.Token, sec.Password, sec.JWT, sec.Crypt)
-	cs := chatdomain.NewService(store.Chat, store.ChatMember)
-	ms := messagedomain.NewMessageService(cs, store.Message)
+	cs := chatdomain.NewService(store.Chat, store.ChatMember, txManager, uuidManager)
+	ms := messagedomain.NewMessageService(cs, store.Message, uuidManager)
 
 	// Handlers
 	h := &handlers.Handlers{
 		Auth:    authhttp.NewHandler(logger, as),
 		Message: msghttp.NewHandler(logger, ms),
-		Chat:    chathttp.NewHandler(logger, ms),
+		Chat:    chathttp.NewHandler(logger, ms, cs),
 	}
 
 	r := router.NewRouter(logger, sec.JWT, h)

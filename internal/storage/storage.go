@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"github.com/thxhix/chat/internal/config"
 	"github.com/thxhix/chat/internal/domain/chat"
 	"github.com/thxhix/chat/internal/domain/chat_member"
@@ -12,6 +13,8 @@ import (
 	"github.com/thxhix/chat/internal/storage/pg"
 	chatpg "github.com/thxhix/chat/internal/storage/pg/chat"
 	chatmpg "github.com/thxhix/chat/internal/storage/pg/chat_member"
+	corepg "github.com/thxhix/chat/internal/storage/pg/core"
+	"github.com/thxhix/chat/internal/storage/pg/core/tx_manager"
 	messagepg "github.com/thxhix/chat/internal/storage/pg/message"
 	tokenpg "github.com/thxhix/chat/internal/storage/pg/token"
 	userpg "github.com/thxhix/chat/internal/storage/pg/user"
@@ -40,9 +43,9 @@ type Storage struct {
 //	storage, closeFn, err := storage.NewStorage(ctx, cfg, logger)
 //	if err != nil { return err }
 //	defer closeFn()
-func NewStorage(ctx context.Context, cfg *config.Config, logger logger.ILogger) (*Storage, func(), error) {
+func NewStorage(ctx context.Context, cfg *config.Config, logger logger.ILogger) (*Storage, *sql.DB, tx_manager.ITXManager, error) {
 	if cfg.DatabaseURI == "" {
-		return nil, nil, ErrNoPostgresConnection
+		return nil, nil, nil, ErrNoPostgresConnection
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, cfg.DatabaseInitTimeout)
@@ -51,29 +54,33 @@ func NewStorage(ctx context.Context, cfg *config.Config, logger logger.ILogger) 
 	logger.Info("Trying to connect to postgresql", zap.String("DSN", cfg.DatabaseURI))
 	db, err := pg.OpenConnection(ctx, cfg)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	logger.Info("Trying to migrate", zap.String("migrations_path", cfg.MigrationsPath))
 	migrator := pg.NewMigrator(db.Driver, cfg.MigrationsPath)
 	if err := migrator.Up(); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	closeFn := func() { _ = db.Driver.Close() }
+	txManager := tx_manager.NewTXManager(cfg.TXManagerKey, db.Driver)
 
 	userRepository := userpg.NewRepository(db.Driver)
 	tokenRepository := tokenpg.NewRepository(db.Driver)
 
-	messageRepository := messagepg.NewRepository(db.Driver)
-	chatRepository := chatpg.NewRepository(db.Driver)
-	chatMemberRepository := chatmpg.NewRepository(db.Driver)
+	baseRepository := corepg.NewBaseRepository(db.Driver, txManager)
+	messageRepository := messagepg.NewRepository(&baseRepository)
+	chatRepository := chatpg.NewRepository(&baseRepository)
+	chatMemberRepository := chatmpg.NewRepository(&baseRepository)
 
 	return &Storage{
-		User:       userRepository,
-		Token:      tokenRepository,
-		Message:    messageRepository,
-		Chat:       chatRepository,
-		ChatMember: chatMemberRepository,
-	}, closeFn, nil
+			User:       userRepository,
+			Token:      tokenRepository,
+			Message:    messageRepository,
+			Chat:       chatRepository,
+			ChatMember: chatMemberRepository,
+		},
+		db.Driver,
+		txManager,
+		nil
 }

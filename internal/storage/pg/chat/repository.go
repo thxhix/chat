@@ -2,26 +2,46 @@ package chat
 
 import (
 	"context"
-	"database/sql"
 	"github.com/google/uuid"
 	"github.com/thxhix/chat/internal/domain/chat"
+	"github.com/thxhix/chat/internal/storage/pg/core"
 )
 
 type ChatRepository struct {
-	db *sql.DB
+	*core.BaseRepository
 }
 
-func NewRepository(db *sql.DB) *ChatRepository {
-	return &ChatRepository{db: db}
+func NewRepository(base *core.BaseRepository) *ChatRepository {
+	return &ChatRepository{
+		BaseRepository: base,
+	}
+}
+
+func (r *ChatRepository) CreateChat(ctx context.Context, idempotencyKey uuid.UUID, cType int8) (*chat.CreateChatResult, bool, error) {
+	executor := r.GetExecutor(ctx)
+
+	res := &chat.CreateChatResult{}
+	var isCreated bool
+
+	err := executor.QueryRowContext(ctx, queryCreateChat, idempotencyKey, cType).Scan(
+		&res.ID,
+		&res.IdempotencyKey,
+		&isCreated,
+	)
+	if err != nil {
+		return res, false, err
+	}
+
+	return res, isCreated, nil
 }
 
 func (r *ChatRepository) GetByUUID(ctx context.Context, chatId int64) (*chat.ChatModel, error) {
-	query := `SELECT id, chat_id, type, title, created_at FROM chats WHERE chat_id = $1`
+	executor := r.GetExecutor(ctx)
 
 	var cr chat.ChatModel
-	err := r.db.QueryRowContext(ctx, query, chatId).Scan(
+	err := executor.QueryRowContext(ctx, queryGetByUUID, chatId).Scan(
 		&cr.ID,
-		&cr.ChatID,
+		&cr.IdempotencyKey,
 		&cr.Type,
 		&cr.Title,
 		&cr.CreatedAt,
@@ -34,12 +54,11 @@ func (r *ChatRepository) GetByUUID(ctx context.Context, chatId int64) (*chat.Cha
 }
 
 func (r *ChatRepository) GetIDByUUID(ctx context.Context, chatUUID uuid.UUID) (int64, error) {
+	executor := r.GetExecutor(ctx)
+
 	var id int64
 
-	err := r.db.QueryRowContext(ctx,
-		`SELECT id FROM chats WHERE chat_id = $1`,
-		chatUUID,
-	).Scan(&id)
+	err := executor.QueryRowContext(ctx, queryGetIDByUUID, chatUUID).Scan(&id)
 
 	if err != nil {
 		return 0, err

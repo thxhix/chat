@@ -6,16 +6,21 @@ import (
 )
 
 type ChatModel struct {
-	ID        int64
-	ChatID    uuid.UUID
-	Type      int8
-	Title     string
-	CreatedAt time.Time
+	ID             int64
+	IdempotencyKey uuid.UUID
+	Type           int8
+	Title          *string
+	CreatedAt      time.Time
 }
 
 type Chat struct {
-	ID     int64
-	ChatID uuid.UUID
-	Type   int8
-	Title  string
+	ID             int64
+	IdempotencyKey uuid.UUID
+	Type           int8
+	Title          *string
+}
+
+type CreateChatResult struct {
+	ID             int64
+	IdempotencyKey uuid.UUID
 }

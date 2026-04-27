@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/thxhix/chat/internal/domain/chat"
+	uuidManager "github.com/thxhix/chat/internal/security/uuid"
 	"github.com/thxhix/chat/internal/transport/http/core"
 	"github.com/thxhix/chat/internal/transport/http/core/cursor"
 )
@@ -14,15 +15,17 @@ type IMessageService interface {
 }
 
 type MessageService struct {
+	uuidManager uuidManager.IUUIDManager
 	chatService chat.IChatService
 
 	messageRepo IMessageRepository
 }
 
-func NewMessageService(cs chat.IChatService, mr IMessageRepository) *MessageService {
+func NewMessageService(cs chat.IChatService, mr IMessageRepository, uuid uuidManager.IUUIDManager) *MessageService {
 	return &MessageService{
 		chatService: cs,
 		messageRepo: mr,
+		uuidManager: uuid,
 	}
 }
 
@@ -67,7 +70,12 @@ func (s *MessageService) SendMessage(ctx context.Context, chatId uuid.UUID, user
 		return "", err
 	}
 
-	messageId, err := s.messageRepo.AddMessage(ctx, internalChatId, userId, text)
+	mUUID, err := s.uuidManager.NewUUIDv7()
+	if err != nil {
+		return "", err
+	}
+
+	messageId, err := s.messageRepo.AddMessage(ctx, mUUID, internalChatId, userId, text)
 	if err != nil {
 		return "", err
 	}

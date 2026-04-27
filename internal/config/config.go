@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/caarlos0/env/v11"
 	"github.com/thxhix/chat/internal/security/jwt"
+	"github.com/thxhix/chat/internal/storage/pg/core/tx_manager"
 	"os"
 	"time"
 )
@@ -13,6 +14,9 @@ type Config struct {
 	DatabaseURI         string        `env:"DATABASE_URI"`
 	DatabaseInitTimeout time.Duration `env:"DB_INIT_TIMEOUT" envDefault:"15s"`
 	MigrationsPath      string        `env:"MIGRATIONS_PATH" envDefault:"file://migrations"`
+
+	UUIDSalt     string           `env:"UUID_SALT" envDefault:"chat"`
+	TXManagerKey tx_manager.TXKey `env:"TX_MANAGER_KEY" envDefault:"chat"`
 
 	// Embedded JWT configuration.
 	JWT jwt.JWTConfig
