@@ -12,7 +12,6 @@ type UserModel struct {
 
 // Бизнес слой
 type User struct {
-	ID           int64
-	Login        string
-	PasswordHash string
+	ID    int64
+	Login string
 }

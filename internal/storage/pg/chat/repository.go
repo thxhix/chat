@@ -35,6 +35,40 @@ func (r *ChatRepository) CreateChat(ctx context.Context, idempotencyKey uuid.UUI
 	return res, isCreated, nil
 }
 
+func (r *ChatRepository) GetUserChats(ctx context.Context, userId int64, limit int64) ([]*chat.ChatModel, error) {
+	executor := r.GetExecutor(ctx)
+
+	rows, err := executor.QueryContext(ctx, queryGetUserChats, userId, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	chats := make([]*chat.ChatModel, 0, limit)
+	for rows.Next() {
+		row := &chat.ChatModel{}
+		err = rows.Scan(
+			&row.ID,
+			&row.IdempotencyKey,
+			&row.Type,
+			&row.Title,
+			&row.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		chats = append(chats, row)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return chats, nil
+}
+
 func (r *ChatRepository) GetByUUID(ctx context.Context, chatId int64) (*chat.ChatModel, error) {
 	executor := r.GetExecutor(ctx)
 

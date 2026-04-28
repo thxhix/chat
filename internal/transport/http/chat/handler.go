@@ -89,3 +89,48 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *Handler) GetUserChats(w http.ResponseWriter, r *http.Request) {
+	userId, ok := middleware.GetUserIDFromCtx(r.Context())
+	if !ok {
+		core.WriteError(w, h.logger, apperror.NewUnauthorizedError("Can't get user ID from token"))
+		return
+	}
+
+	resChats, err := h.chatService.GetUserChats(r.Context(), userId)
+	if err != nil {
+		core.WriteError(w, h.logger, err)
+		return
+	}
+
+	cList := make([]*Chat, 0, len(resChats.Chats))
+	for _, m := range resChats.Chats {
+		row := &Chat{
+			ID:        m.ID,
+			Title:     m.Title,
+			CreatedAt: m.CreatedAt,
+		}
+		row.Target = nil
+
+		if m.Type != 3 && m.Participants != nil {
+			row.Target = &ChatUserShort{
+				ID:    m.Participants.UserID,
+				Login: m.Participants.UserLogin,
+			}
+		}
+
+		cList = append(cList, row)
+	}
+
+	res := GetChatsResponse{
+		Chats: cList,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if _, err := easyjson.MarshalToWriter(&res, w); err != nil {
+		h.logger.Error(core.ErrCantWriteResponseBody.Error(), zap.Error(err))
+		return
+	}
+}

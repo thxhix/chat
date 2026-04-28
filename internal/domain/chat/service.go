@@ -12,6 +12,7 @@ import (
 
 type IChatService interface {
 	CreateChat(ctx context.Context, cType int8, members []int64) (*CreateChatResult, bool, error)
+	GetUserChats(ctx context.Context, userId int64) (*GetChatsResult, error)
 
 	GetInternalID(ctx context.Context, chatUUID uuid.UUID) (int64, error)
 	EnsureUserInChat(ctx context.Context, chatId int64, userId int64) error
@@ -66,7 +67,7 @@ func (s *ChatService) CreateChat(ctx context.Context, cType int8, members []int6
 	var idempotencyKey uuid.UUID
 	var isCreated bool
 
-	if cType == 1 {
+	if cType == 1 || cType == 3 {
 		idempotencyKey = s.uuidManager.NewUUIDv5(GenerateIdempotencyStr(cType, members))
 	} else {
 		idempotencyKey, err = s.uuidManager.NewUUIDv7()
@@ -92,4 +93,46 @@ func (s *ChatService) CreateChat(ctx context.Context, cType int8, members []int6
 	}
 
 	return chat, isCreated, nil
+}
+
+func (s *ChatService) GetUserChats(ctx context.Context, userId int64) (*GetChatsResult, error) {
+	chats, err := s.chatRepo.GetUserChats(ctx, userId, 25)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int64, len(chats))
+	for i, chat := range chats {
+		ids[i] = chat.ID
+	}
+
+	membersMap, err := s.chatMemberRepo.GetMembersForChats(ctx, ids, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]*Chat, 0, len(chats))
+
+	for _, c := range chats {
+		chatMembers := membersMap[c.ID]
+
+		row := &Chat{
+			ID:             c.ID,
+			IdempotencyKey: c.IdempotencyKey,
+			Type:           c.Type,
+			CreatedAt:      c.CreatedAt,
+		}
+
+		if c.Type != 3 {
+			if len(chatMembers) > 0 {
+				row.Participants = chatMembers[0]
+			}
+		}
+
+		res = append(res, row)
+	}
+
+	return &GetChatsResult{
+		Chats: res,
+	}, nil
 }

@@ -15,6 +15,7 @@ func NewRouter(logger logger.ILogger, jwtManager jwt.IJWTManager, h *handlers.Ha
 	router.Use(middleware.NewRecoverer(logger))
 	router.Use(middleware.GzipMiddleware)
 	router.Use(middleware.TimeoutMiddleware)
+	router.Use(middleware.CorsMiddleware)
 
 	router.Route("/api", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
@@ -27,6 +28,7 @@ func NewRouter(logger logger.ILogger, jwtManager jwt.IJWTManager, h *handlers.Ha
 			r.Use(middleware.Authorize(logger, jwtManager))
 			r.Route("/chats", func(r chi.Router) {
 				r.Post("/", h.Chat.CreateChat)
+				r.Get("/", h.Chat.GetUserChats)
 
 				r.Route("/{"+core.ChatIdPrefix+"}", func(r chi.Router) {
 					r.Group(func(r chi.Router) {
