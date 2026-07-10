@@ -18,10 +18,13 @@ type CreateChatResponse struct {
 }
 
 type Chat struct {
-	ID        int64          `json:"id"`
-	Title     *string        `json:"title"`
-	CreatedAt time.Time      `json:"created_at"`
-	Target    *ChatUserShort `json:"target,omitempty"`
+	ID              int64          `json:"id"`
+	UUID            uuid.UUID      `json:"uuid"`
+	Title           *string        `json:"title"`
+	Type            int8           `json:"type"`
+	CreatedAt       time.Time      `json:"created_at"`
+	Target          *ChatUserShort `json:"target,omitempty"`
+	LastMessageText *string        `json:"last_message_text"`
 }
 
 type ChatUserShort struct {

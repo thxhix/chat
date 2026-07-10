@@ -105,10 +105,15 @@ func (h *Handler) GetUserChats(w http.ResponseWriter, r *http.Request) {
 
 	cList := make([]*Chat, 0, len(resChats.Chats))
 	for _, m := range resChats.Chats {
+		title := chat.GetChatTitle(m)
+
 		row := &Chat{
-			ID:        m.ID,
-			Title:     m.Title,
-			CreatedAt: m.CreatedAt,
+			ID:              m.ID,
+			UUID:            m.IdempotencyKey,
+			Title:           &title,
+			Type:            m.Type,
+			CreatedAt:       m.CreatedAt,
+			LastMessageText: m.LastMsgText,
 		}
 		row.Target = nil
 

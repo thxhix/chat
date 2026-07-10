@@ -11,6 +11,8 @@ type ChatModel struct {
 	IdempotencyKey uuid.UUID
 	Type           int8
 	Title          *string
+	LastMsgID      *int64
+	LastMsgText    *string
 	CreatedAt      time.Time
 }
 
@@ -21,6 +23,7 @@ type Chat struct {
 	Title          *string
 	CreatedAt      time.Time
 	Participants   *chat_member.Member
+	LastMsgText    *string
 }
 
 type CreateChatResult struct {

@@ -17,3 +17,30 @@ func getSortedPair(a, b int64) (int64, int64) {
 func getKeyStr(cType int8, id1, id2 int64) string {
 	return fmt.Sprintf("%d:%d:%d", cType, id1, id2)
 }
+
+func GetChatTitle(c *Chat) string {
+	if c == nil {
+		return "Unknown"
+	}
+
+	switch c.Type {
+	case 1: // Личный чат
+		if c.Participants != nil {
+			return c.Participants.UserLogin
+		}
+		return "Deleted User"
+	case 2: // Группа
+		if c.Title != nil && *c.Title != "" {
+			return *c.Title
+		}
+		return "Group"
+	case 3: // Избранное / Сохраненки
+		return "Saved Messages"
+	default:
+		// Безопасная обработка на случай странных типов
+		if c.Title != nil {
+			return *c.Title
+		}
+		return "Chat"
+	}
+}

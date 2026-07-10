@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/thxhix/chat/internal/domain/chat_member"
+	"github.com/thxhix/chat/internal/domain/strings"
 	uuidManager "github.com/thxhix/chat/internal/security/uuid"
 	"github.com/thxhix/chat/internal/storage/pg/core/tx_manager"
 )
@@ -121,6 +122,11 @@ func (s *ChatService) GetUserChats(ctx context.Context, userId int64) (*GetChats
 			IdempotencyKey: c.IdempotencyKey,
 			Type:           c.Type,
 			CreatedAt:      c.CreatedAt,
+		}
+
+		if c.LastMsgText != nil {
+			truncated := strings.TruncatePreviewText(*c.LastMsgText)
+			row.LastMsgText = &truncated
 		}
 
 		if c.Type != 3 {

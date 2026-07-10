@@ -2,7 +2,6 @@ package message
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"github.com/mailru/easyjson"
 	"github.com/thxhix/chat/internal/apperror"
 	"github.com/thxhix/chat/internal/domain/message"
@@ -14,6 +13,7 @@ import (
 	"go.uber.org/zap"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 type Handler struct {
@@ -29,15 +29,15 @@ func NewHandler(l logger.ILogger, ms message.IMessageService) *Handler {
 }
 
 type RequestMeta struct {
-	ChatID uuid.UUID
+	ChatID int64
 	UserID int64
 }
 
 func getRequestMeta(r *http.Request) (*RequestMeta, error) {
-	chatIDStr := chi.URLParam(r, core.ChatIdPrefix)
-	chatID, err := uuid.Parse(chatIDStr)
+	chatIdStr := chi.URLParam(r, core.ChatIdPrefix)
+	chatId, err := strconv.ParseInt(chatIdStr, 10, 64)
 	if err != nil {
-		return nil, apperror.NewBadRequestError("Wrong ChatID format provided")
+		return nil, apperror.NewBadRequestError("invalid chat_id")
 	}
 
 	userId, ok := middleware.GetUserIDFromCtx(r.Context())
@@ -45,7 +45,7 @@ func getRequestMeta(r *http.Request) (*RequestMeta, error) {
 		return nil, apperror.NewUnauthorizedError("Can't get user ID from token")
 	}
 	return &RequestMeta{
-		ChatID: chatID,
+		ChatID: chatId,
 		UserID: userId,
 	}, nil
 }
@@ -57,18 +57,16 @@ func (h *Handler) GetMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := GetMessagesRequest{
-		Cursor: cursor.GetFromRequest(r),
-		Limit:  limit.GetFromRequest(r),
-	}
+	reqLimit := limit.GetFromRequest(r)
+	reqCursorStr := cursor.GetFromRequest(r)
 
-	reqCursor, err := cursor.DecodeCursor(req.Cursor)
+	reqCursor, err := cursor.DecodeCursor(reqCursorStr)
 	if err != nil {
 		core.WriteError(w, h.logger, err)
 		return
 	}
 
-	result, err := h.msgService.GetChatMessages(r.Context(), rm.ChatID, rm.UserID, req.Limit, reqCursor)
+	result, err := h.msgService.GetChatMessages(r.Context(), rm.ChatID, rm.UserID, reqLimit, reqCursor)
 	if err != nil {
 		core.WriteError(w, h.logger, err)
 		return
@@ -117,6 +115,7 @@ func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 		core.WriteError(w, h.logger, err)
 		return
 	}
+	defer func() { _ = r.Body.Close() }()
 
 	var req SendMessageRequest
 	err = easyjson.Unmarshal(body, &req)
@@ -125,7 +124,7 @@ func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	messageId, err := h.msgService.SendMessage(r.Context(), rm.ChatID, rm.UserID, req.Text)
+	messageId, err := h.msgService.SendMessage(r.Context(), req.ChatId, rm.UserID, req.Text)
 	if err != nil {
 		core.WriteError(w, h.logger, err)
 		return

@@ -23,7 +23,7 @@ func (r *ChatRepository) CreateChat(ctx context.Context, idempotencyKey uuid.UUI
 	res := &chat.CreateChatResult{}
 	var isCreated bool
 
-	err := executor.QueryRowContext(ctx, queryCreateChat, idempotencyKey, cType).Scan(
+	err := executor.QueryRowContext(ctx, queryCreateChat, idempotencyKey, cType, 0).Scan(
 		&res.ID,
 		&res.IdempotencyKey,
 		&isCreated,
@@ -54,6 +54,8 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userId int64, limit i
 			&row.Type,
 			&row.Title,
 			&row.CreatedAt,
+			&row.LastMsgID,
+			&row.LastMsgText,
 		)
 		if err != nil {
 			return nil, err
@@ -67,6 +69,16 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userId int64, limit i
 	}
 
 	return chats, nil
+}
+
+func (r *ChatRepository) UpdateLastMsg(ctx context.Context, chatId int64, msgId int64) (bool, error) {
+	executor := r.GetExecutor(ctx)
+
+	_, err := executor.ExecContext(ctx, queryUpdateLastMsg, chatId, msgId)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (r *ChatRepository) GetByUUID(ctx context.Context, chatId int64) (*chat.ChatModel, error) {

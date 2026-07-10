@@ -35,7 +35,7 @@ func easyjson56de76c1DecodeGithubComThxhixChatInternalTransportHttpMessage(in *j
 			if in.IsNull() {
 				in.Skip()
 			} else {
-				out.MessageID = string(in.String())
+				out.MessageID = int64(in.Int64())
 			}
 		default:
 			in.SkipRecursive()
@@ -54,7 +54,7 @@ func easyjson56de76c1EncodeGithubComThxhixChatInternalTransportHttpMessage(out *
 	{
 		const prefix string = ",\"message_id\":"
 		out.RawString(prefix[1:])
-		out.String(string(in.MessageID))
+		out.Int64(int64(in.MessageID))
 	}
 	out.RawByte('}')
 }
@@ -96,6 +96,12 @@ func easyjson56de76c1DecodeGithubComThxhixChatInternalTransportHttpMessage1(in *
 		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		switch key {
+		case "chat_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.ChatId = int64(in.Int64())
+			}
 		case "text":
 			if in.IsNull() {
 				in.Skip()
@@ -117,8 +123,13 @@ func easyjson56de76c1EncodeGithubComThxhixChatInternalTransportHttpMessage1(out 
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"text\":"
+		const prefix string = ",\"chat_id\":"
 		out.RawString(prefix[1:])
+		out.Int64(int64(in.ChatId))
+	}
+	{
+		const prefix string = ",\"text\":"
+		out.RawString(prefix)
 		out.String(string(in.Text))
 	}
 	out.RawByte('}')
@@ -281,6 +292,12 @@ func easyjson56de76c1DecodeGithubComThxhixChatInternalTransportHttpMessage3(in *
 		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		switch key {
+		case "chat_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.ChatId = int64(in.Int64())
+			}
 		case "cursor":
 			if in.IsNull() {
 				in.Skip()
@@ -308,8 +325,13 @@ func easyjson56de76c1EncodeGithubComThxhixChatInternalTransportHttpMessage3(out 
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"cursor\":"
+		const prefix string = ",\"chat_id\":"
 		out.RawString(prefix[1:])
+		out.Int64(int64(in.ChatId))
+	}
+	{
+		const prefix string = ",\"cursor\":"
+		out.RawString(prefix)
 		out.String(string(in.Cursor))
 	}
 	{

@@ -35,7 +35,7 @@ func RunServer(logger logger.ILogger, cfg *config.Config) error {
 	// Services
 	as := authdomain.NewService(store.User, store.Token, sec.Password, sec.JWT, sec.Crypt)
 	cs := chatdomain.NewService(store.Chat, store.ChatMember, txManager, uuidManager)
-	ms := messagedomain.NewMessageService(cs, store.Message, uuidManager)
+	ms := messagedomain.NewService(cs, store.Message, store.Chat, txManager, uuidManager)
 
 	// Handlers
 	h := &handlers.Handlers{

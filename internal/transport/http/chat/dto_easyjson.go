@@ -408,6 +408,14 @@ func easyjson56de76c1DecodeGithubComThxhixChatInternalTransportHttpChat4(in *jle
 			} else {
 				out.ID = int64(in.Int64())
 			}
+		case "uuid":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				if data := in.UnsafeBytes(); in.Ok() {
+					in.AddError((out.UUID).UnmarshalText(data))
+				}
+			}
 		case "title":
 			if in.IsNull() {
 				in.Skip()
@@ -421,6 +429,12 @@ func easyjson56de76c1DecodeGithubComThxhixChatInternalTransportHttpChat4(in *jle
 				} else {
 					*out.Title = string(in.String())
 				}
+			}
+		case "type":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.Type = int8(in.Int8())
 			}
 		case "created_at":
 			if in.IsNull() {
@@ -444,6 +458,20 @@ func easyjson56de76c1DecodeGithubComThxhixChatInternalTransportHttpChat4(in *jle
 					(*out.Target).UnmarshalEasyJSON(in)
 				}
 			}
+		case "last_message_text":
+			if in.IsNull() {
+				in.Skip()
+				out.LastMessageText = nil
+			} else {
+				if out.LastMessageText == nil {
+					out.LastMessageText = new(string)
+				}
+				if in.IsNull() {
+					in.Skip()
+				} else {
+					*out.LastMessageText = string(in.String())
+				}
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -464,6 +492,11 @@ func easyjson56de76c1EncodeGithubComThxhixChatInternalTransportHttpChat4(out *jw
 		out.Int64(int64(in.ID))
 	}
 	{
+		const prefix string = ",\"uuid\":"
+		out.RawString(prefix)
+		out.RawText((in.UUID).MarshalText())
+	}
+	{
 		const prefix string = ",\"title\":"
 		out.RawString(prefix)
 		if in.Title == nil {
@@ -471,6 +504,11 @@ func easyjson56de76c1EncodeGithubComThxhixChatInternalTransportHttpChat4(out *jw
 		} else {
 			out.String(string(*in.Title))
 		}
+	}
+	{
+		const prefix string = ",\"type\":"
+		out.RawString(prefix)
+		out.Int8(int8(in.Type))
 	}
 	{
 		const prefix string = ",\"created_at\":"
@@ -481,6 +519,15 @@ func easyjson56de76c1EncodeGithubComThxhixChatInternalTransportHttpChat4(out *jw
 		const prefix string = ",\"target\":"
 		out.RawString(prefix)
 		(*in.Target).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"last_message_text\":"
+		out.RawString(prefix)
+		if in.LastMessageText == nil {
+			out.RawString("null")
+		} else {
+			out.String(string(*in.LastMessageText))
+		}
 	}
 	out.RawByte('}')
 }

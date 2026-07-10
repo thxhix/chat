@@ -3,7 +3,6 @@ package message
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/thxhix/chat/internal/domain/chat"
 	"github.com/thxhix/chat/internal/domain/message"
 	"github.com/thxhix/chat/internal/storage/pg/core"
 	"github.com/thxhix/chat/internal/transport/http/core/cursor"
@@ -96,20 +95,13 @@ func (r *MessageRepository) getByChatIDCursor(ctx context.Context, chatId int64,
 	return messages, nil
 }
 
-func (r *MessageRepository) AddMessage(ctx context.Context, messageId uuid.UUID, chatId int64, userId int64, text string) (string, error) {
-	result, err := r.BaseRepository.DB.ExecContext(ctx, addMessageQuery, messageId, chatId, userId, text)
+func (r *MessageRepository) AddMessage(ctx context.Context, messageId uuid.UUID, chatId int64, userId int64, text string) (int64, error) {
+	executor := r.GetExecutor(ctx)
+	var msgId int64
+	err := executor.QueryRowContext(ctx, addMessageQuery, messageId, chatId, userId, text).Scan(&msgId)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return "", err
-	}
-
-	if affected == 0 {
-		return "", chat.ErrForbidden
-	}
-
-	return messageId.String(), nil
+	return msgId, nil
 }

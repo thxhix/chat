@@ -8,14 +8,16 @@ import (
 //go:generate easyjson -all dto.go
 
 type SendMessageRequest struct {
-	Text string `json:"text"`
+	ChatId int64  `json:"chat_id"`
+	Text   string `json:"text"`
 }
 
 type SendMessageResponse struct {
-	MessageID string `json:"message_id"`
+	MessageID int64 `json:"message_id"`
 }
 
 type GetMessagesRequest struct {
+	ChatId int64  `json:"chat_id"`
 	Cursor string `json:"cursor"`
 	Limit  int    `json:"limit"`
 }
